@@ -1,0 +1,25 @@
+# Syft configuration for db-dumper SBOM generation.
+#
+# Scope: exclude Go modules from the upstream docker CLI bundle.
+#
+# db-dumper's code is a handful of POSIX shell scripts
+# (dump.sh, health.sh, entrypoint.sh) layered on top of the upstream
+# `docker:29-cli` base image. The base image ships the `docker` CLI,
+# `docker-buildx`, and `docker-compose` plugins — collectively built
+# from ~350 Go modules (survey, aws-sdk-go-v2, ProtonMail/go-crypto,
+# etc.). By default syft's go-module-binary-cataloger reads BuildInfo
+# from each of those binaries and reports every dependency as if it
+# were a package db-dumper depends on.
+#
+# That is misleading: those modules are docker's supply chain, not
+# db-dumper's. db-dumper has no Go code of its own. Deselecting
+# everything tagged `golang` drops the 347 upstream-docker modules
+# and leaves the honest inventory: ~37 alpine apk packages from the
+# base image, plus the OCI image metadata. The docker CLI itself is
+# still represented by its apk package.
+#
+# Image-level CVE scanning (grype/trivy on the image) still surfaces
+# any vulnerabilities in the bundled docker plugins — it reads the
+# binaries directly and is unaffected by this scoping choice.
+select-catalogers:
+  - -golang
