@@ -1,0 +1,19 @@
+services:
+  db-dumper:
+    image: ghcr.io/cplieger/db-dumper:latest
+    container_name: db-dumper
+    restart: unless-stopped
+    user: "0:0"  # required for docker socket access
+
+    environment:
+      TZ: "Europe/Paris"
+      # Space-separated container:dbname:user tuples
+      DB_SPECS: "postgres-container:mydb:postgres"
+      DUMP_TIMEOUT: "300"
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /path/to/dumps:/dumps
+
+    ports:
+      - "9847:9847"  # CGI endpoint (trigger dumps via HTTP GET /cgi-bin/dump)
