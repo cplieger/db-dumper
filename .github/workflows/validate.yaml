@@ -29,18 +29,3 @@ jobs:
           curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v8.27.2/gitleaks_8.27.2_linux_x64.tar.gz" \
             | tar xz -C /usr/local/bin gitleaks
           gitleaks detect --source . --no-banner
-      - name: Scan for secrets
-        run: |
-          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v8.27.2/gitleaks_8.27.2_linux_x64.tar.gz" \
-            | tar xz -C /usr/local/bin gitleaks
-          gitleaks detect --source . --no-banner
-      - name: Scan for secrets
-        run: |
-          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v8.27.2/gitleaks_8.27.2_linux_x64.tar.gz" \
-            | tar xz -C /usr/local/bin gitleaks
-          gitleaks detect --source . --no-banner
-      - name: Scan for secrets
-        run: |
-          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v8.27.2/gitleaks_8.27.2_linux_x64.tar.gz" \
-            | tar xz -C /usr/local/bin gitleaks
-          gitleaks detect --source . --no-banner
