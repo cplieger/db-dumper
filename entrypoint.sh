@@ -1,6 +1,6 @@
 #!/bin/sh
 # db-dumper entrypoint: clean up stale tmp files from previous container
-# lifetimes, then exec busybox httpd in foreground as PID 1.
+# lifetimes, then exec cgiserver in background, then wait.
 #
 # Stale cleanup is safe here because no CGI children exist yet — any
 # *.dump.tmp.* file found at start-up was orphaned by a crash, OOM kill,
@@ -88,11 +88,11 @@ else
 fi
 
 cleanup() {
-  # Propagate signal to httpd child for graceful shutdown.
+  # Propagate signal to cgiserver child for graceful shutdown.
   [ -n "${HTTPD_PID:-}" ] && kill "$HTTPD_PID" 2> /dev/null
 }
 trap cleanup INT TERM
 
-httpd -f -p 9847 -h /srv &
+cgiserver &
 HTTPD_PID=$!
 wait "$HTTPD_PID"
