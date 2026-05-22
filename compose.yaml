@@ -7,13 +7,13 @@ services:
 
     environment:
       TZ: "Europe/Paris"
-      # Space-separated container:dbname:user tuples
       DB_SPECS: "postgres-container:mydb:postgres"
       DUMP_TIMEOUT: "300"
+      DUMP_FREE_KB_WARN: "1048576"
+
+    ports:
+      - "9847:9847"
 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /path/to/dumps:/dumps
-
-    ports:
-      - "9847:9847"  # CGI endpoint (trigger dumps via HTTP GET /cgi-bin/dump)
+      - "/opt/appdata/db-dumper/dumps:/dumps"
