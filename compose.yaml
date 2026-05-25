@@ -7,13 +7,13 @@ services:
 
     environment:
       TZ: "Europe/Paris"
-      DB_SPECS: "postgres-container:mydb:postgres"
-      DUMP_TIMEOUT: "300"
-      DUMP_FREE_KB_WARN: "1048576"
+      DB_SPECS: "myapp-db:myapp:postgres"  # space-separated container:dbname:user tuples
+      DUMP_TIMEOUT: "300"  # per-dump timeout in seconds (min 10)
+      DUMP_FREE_KB_WARN: "1048576"  # warn when /dumps falls below 1 GiB; 0 = disable
 
     ports:
       - "9847:9847"
 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - "/opt/appdata/db-dumper/dumps:/dumps"
+      - "/opt/appdata/db-dumper/dumps:/dumps"  # output directory for .dump files
