@@ -1,5 +1,5 @@
 #!/bin/sh
-# HTTP response helpers for CGI scripts (busybox httpd).
+# HTTP response helpers for CGI scripts.
 
 # respond: emit an HTTP response.
 # Usage: respond <status_line> <content_type> <body>

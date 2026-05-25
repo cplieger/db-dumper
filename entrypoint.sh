@@ -20,9 +20,10 @@ if [ -d "$DUMP_DIR" ]; then
 fi
 
 # Warn (don't delete) on ${dbname}.dump files whose dbname is not currently
-# configured in DB_SPECS. Kopia would otherwise keep snapshotting the orphan
-# forever with an unchanged mtime; the warning gives operators a chance to
-# reconcile without the risk of a misconfigured DB_SPECS wiping real backups.
+# configured in DB_SPECS. A backup tool watching this directory would
+# otherwise keep snapshotting the orphan forever with an unchanged mtime;
+# the warning gives operators a chance to reconcile without the risk of
+# a misconfigured DB_SPECS wiping real backups.
 warn_orphan_dumps() {
   [ -d "$DUMP_DIR" ] || return 0
 

@@ -343,12 +343,11 @@ esac
 
 # --- Concurrency guard ---
 #
-# BusyBox httpd forks a fresh CGI child per request. Without a top-level
-# lock two concurrent dumps would hammer the source DB 2x (manual trigger
-# during the 02:00 cron run, accidental curl loop, or a Kopia
-# before-snapshot action colliding with docker-cron). Reject with 429 so
-# the caller's retry policy decides what to do. The lock is released when
-# the CGI child exits (httpd closes FD 9).
+# The CGI server forks a fresh child per request. Without this top-level
+# lock, two concurrent dumps would hammer the source DB twice (e.g. a
+# manual trigger arriving during a scheduled run, or an accidental curl
+# loop). Reject with 429 so the caller's retry policy decides what to do.
+# The lock is released when the CGI child exits.
 exec 9> "$LOCK_FILE"
 if ! flock -n 9; then
   log_warn "dump already in progress, rejecting concurrent request" "remote=${REMOTE_ADDR:-unknown}"
