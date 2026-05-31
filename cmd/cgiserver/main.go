@@ -9,6 +9,7 @@ import (
 	"net/http/cgi"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func main() {
@@ -25,6 +26,14 @@ func main() {
 	http.HandleFunc("/cgi-bin/", func(w http.ResponseWriter, r *http.Request) {
 		script := filepath.Base(r.URL.Path)
 		path := filepath.Join(cgiDir, script)
+
+		// Guard against path traversal: filepath.Base can still yield ".."
+		// (e.g. a request path of "/cgi-bin/.."), so confirm the resolved
+		// path stays inside cgiDir before touching the filesystem.
+		if !strings.HasPrefix(path, filepath.Clean(cgiDir)+string(os.PathSeparator)) {
+			http.NotFound(w, r)
+			return
+		}
 
 		if _, err := os.Stat(path); err != nil {
 			http.NotFound(w, r)
