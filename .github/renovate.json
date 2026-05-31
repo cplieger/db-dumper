@@ -1,15 +1,4 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>cplieger/ci"],
-  "ignorePaths": ["compose.yaml"],
-  "customManagers": [
-    {
-      "customType": "regex",
-      "description": "Dockerfile ARG versions with renovate comments",
-      "managerFilePatterns": ["/Dockerfile$/"],
-      "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>[a-z-]+)\\s+depName=(?<depName>[^\\s]+)(\\s+versioning=(?<versioning>[a-z-]+))?\\nARG\\s+\\w+=(?<currentValue>\\S+)"
-      ]
-    }
-  ]
+  "extends": ["github>cplieger/.github"]
 }
