@@ -6,10 +6,11 @@ package main
 import (
 	"log"
 	"net/http"
-	"net/http/cgi"
+	"net/http/cgi" //nolint:gosec // G504: CGI is the entire point of this binary; CVE-2016-5386 (Httpoxy) was fixed in Go 1.6.3 and we ship on Go 1.26+.
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -23,7 +24,9 @@ func main() {
 		addr = v
 	}
 
-	http.HandleFunc("/cgi-bin/", func(w http.ResponseWriter, r *http.Request) {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/cgi-bin/", func(w http.ResponseWriter, r *http.Request) {
 		script := filepath.Base(r.URL.Path)
 		path := filepath.Join(cgiDir, script)
 
@@ -35,7 +38,7 @@ func main() {
 			return
 		}
 
-		if _, err := os.Stat(path); err != nil {
+		if _, err := os.Stat(path); err != nil { //nolint:gosec // G703: path is constrained to cgiDir by the prefix check above.
 			http.NotFound(w, r)
 			return
 		}
@@ -44,12 +47,26 @@ func main() {
 		handler.ServeHTTP(w, r)
 	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 	})
 
-	log.Printf("cgiserver listening on %s (scripts: %s)", addr, cgiDir)
-	if err := http.ListenAndServe(addr, nil); err != nil {
+	// G706: addr and cgiDir come from process environment / startup config,
+	// not from network input, so log injection is not a concern here.
+	log.Printf("cgiserver listening on %s (scripts: %s)", addr, cgiDir) //nolint:gosec // G706: trusted startup config, not user input.
+
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: mux,
+		// CGI scripts can run long (pg_dump on large DBs), so the body-write
+		// timeouts (WriteTimeout / IdleTimeout) are intentionally generous.
+		// ReadHeaderTimeout is the slowloris guard and stays small.
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      0, // CGI may stream gigabytes; let the script finish.
+		IdleTimeout:       60 * time.Second,
+	}
+	if err := srv.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
 }
