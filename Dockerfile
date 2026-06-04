@@ -13,8 +13,16 @@ COPY cmd/ cmd/
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -trimpath -ldflags="-s -w" -o /cgiserver ./cmd/cgiserver
 
-# renovate: datasource=docker depName=docker
-FROM docker:29-cli@sha256:9ba8e32bfc35a2c7ae2feb1e3241b2778ae21dee80f4dcd31d04e1cfdea86ea2
+# Use alpine + docker-cli (just /usr/bin/docker, no buildx/compose plugins) instead
+# of the official `docker:29-cli` image. Eliminates ~150 MB and 15 plugin CVEs;
+# we only call `docker version|exec|inspect` so the plugins are dead weight.
+# renovate: datasource=docker depName=alpine
+FROM alpine:3.22@sha256:310c62b5e7ca5b08167e4384c68db0fd2905dd9c7493756d356e893909057601
+
+# docker-cli for talking to the host docker.sock (mounted by compose);
+# wget for the HEALTHCHECK below (busybox in alpine already provides it, but
+# we also pull tini for clean signal handling under PID 1).
+RUN apk add --no-cache docker-cli tini
 
 COPY --from=builder /cgiserver /usr/local/bin/cgiserver
 
@@ -29,4 +37,4 @@ EXPOSE 9847
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=15s \
     CMD body=$(wget -qO - http://127.0.0.1:9847/cgi-bin/health 2>&1) || { printf '%s\n' "$body" >&2; exit 1; }; \
         case "$body" in ok*) exit 0 ;; *) printf '%s\n' "$body" >&2; exit 1 ;; esac
-ENTRYPOINT ["/usr/local/bin/entrypoint"]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/entrypoint"]
