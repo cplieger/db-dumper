@@ -43,7 +43,22 @@ func main() {
 			return
 		}
 
-		handler := &cgi.Handler{Path: path, Dir: cgiDir}
+		handler := &cgi.Handler{
+			Path: path,
+			Dir:  cgiDir,
+			// InheritEnv forwards env vars from the parent process to CGI
+			// scripts. Without this, Go's cgi.Handler only passes the
+			// standard CGI vars (REQUEST_METHOD, etc.) and health.sh /
+			// dump.sh would see DB_SPECS as empty even when set on the
+			// container, breaking both the healthcheck (DB_SPECS_empty)
+			// and scheduled dumps.
+			InheritEnv: []string{
+				"DB_SPECS",
+				"DUMP_DIR",
+				"DUMP_TIMEOUT",
+				"DUMP_FREE_KB_WARN",
+			},
+		}
 		handler.ServeHTTP(w, r)
 	})
 
