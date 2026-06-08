@@ -3,7 +3,7 @@
 [![GitHub release](https://img.shields.io/github/v/release/cplieger/db-dumper)](https://github.com/cplieger/db-dumper/releases)
 [![Image Size](https://ghcr-badge.egpl.dev/cplieger/db-dumper/size)](https://github.com/cplieger/db-dumper/pkgs/container/db-dumper)
 ![Platforms](https://img.shields.io/badge/platforms-amd64%20%7C%20arm64-blue)
-![base: docker 29-cli](https://img.shields.io/badge/base-docker_29--cli-2496ED?logo=docker)
+![base: alpine 3.23](https://img.shields.io/badge/base-alpine_3.23-0D597F?logo=alpinelinux)
 
 On-demand PostgreSQL backup sidecar — hit an HTTP endpoint, get a
 `.dump` file ready for your existing backup tool to pick up.
@@ -63,9 +63,10 @@ themselves with built-in cron. This image takes the opposite tack:
 - **Single env var for multiple databases.** Add a database to your
   pipeline by appending to `DB_SPECS`, no per-DB config files.
 
-This is a minimal Alpine image based on `docker:29-cli` — just enough
-to run `pg_dump` over a Docker socket via `docker exec`. It runs as
-root because mounting the Docker socket requires it.
+This is a minimal Alpine image (`alpine:3.23` with the `docker-cli`
+package added) — just enough to run `pg_dump` over a Docker socket via
+`docker exec`. It runs as root because mounting the Docker socket
+requires it.
 
 ## Quick start
 
@@ -207,11 +208,14 @@ underlying issue is fixed the next probe recovers without a restart.
 
 | Dependency | Version | Source |
 |------------|---------|--------|
-| docker | `29-cli` | [Docker Hub](https://hub.docker.com/_/docker) |
+| alpine | `3.23` | [Docker Hub](https://hub.docker.com/_/alpine) |
+| docker-cli | Alpine apk package | [Alpine packages](https://pkgs.alpinelinux.org/packages?name=docker-cli) |
+| tini | Alpine apk package | [Alpine packages](https://pkgs.alpinelinux.org/packages?name=tini) |
 | golang (build only) | `1.26-alpine` | [Go](https://hub.docker.com/_/golang) |
 
-Updated automatically via [Renovate](https://github.com/renovatebot/renovate)
-and pinned by digest. Builds carry signed SBOMs and provenance attestations
+Base images are updated automatically via [Renovate](https://github.com/renovatebot/renovate)
+and pinned by digest; `docker-cli` and `tini` track the Alpine package
+repository. Builds carry signed SBOMs and provenance attestations
 verifiable with `gh attestation verify`.
 
 ## Credits
