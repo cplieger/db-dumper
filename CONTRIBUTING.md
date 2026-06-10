@@ -54,7 +54,7 @@ order — keep this separation when extending it:
 ## Gotchas that will trip you up
 
 - **Health endpoint always returns HTTP 200.** `health.sh` encodes the
-  verdict in the response *body* (`ok` or `unhealthy: <reasons>`), not
+  verdict in the response _body_ (`ok` or `unhealthy: <reasons>`), not
   the status code. This is deliberate — busybox `wget` discards bodies
   on non-2xx — and there is a comment block in `health.sh` warning not
   to "fix" it back to 503. The `Dockerfile` `HEALTHCHECK` parses the
