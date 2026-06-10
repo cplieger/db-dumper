@@ -15,7 +15,7 @@ RUN CGO_ENABLED=0 \
 # of the official `docker:29-cli` image. Eliminates ~150 MB and 15 plugin CVEs;
 # we only call `docker version|exec|inspect` so the plugins are dead weight.
 # renovate: datasource=docker depName=alpine
-FROM alpine:3.24@sha256:660e0827bd401543d81323d4886abbd08fda0fe3ba84337837d0b11a67251283
+FROM alpine:3.24@sha256:8ddefa941e689fc29abcdeb8dae3b3c6d139cc08ce9a52633931160701770685
 
 # docker-cli for talking to the host docker.sock (mounted by compose);
 # wget for the HEALTHCHECK below (busybox in alpine already provides it, but
