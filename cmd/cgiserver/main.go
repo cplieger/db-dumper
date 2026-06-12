@@ -13,6 +13,34 @@ import (
 	"time"
 )
 
+// resolveCGIScriptPath maps an incoming request URL path to the on-disk path
+// of the CGI script to execute inside cgiDir. It returns ok=false when the
+// resolved path would escape cgiDir.
+//
+// This is the path-traversal guard for the /cgi-bin/ handler. The request path
+// is untrusted network input: filepath.Base can still yield ".." (e.g. a
+// request path of "/cgi-bin/.."), so the resolved path is confirmed to stay
+// inside cgiDir before the caller touches the filesystem. By construction a
+// successful result is always cgiDir joined with a single path element, so its
+// parent directory is exactly cgiDir.
+//
+// cgiDir must be absolute. A relative cgiDir is rejected outright (fail closed)
+// because the prefix containment check is only sound against an absolute,
+// cleaned root; a misconfigured relative CGI_DIR would otherwise weaken the
+// guard. In production cgiDir is always absolute (the /srv/cgi-bin default or
+// an absolute CGI_DIR), so this only ever rejects a misconfiguration.
+func resolveCGIScriptPath(cgiDir, urlPath string) (string, bool) {
+	if !filepath.IsAbs(cgiDir) {
+		return "", false
+	}
+	script := filepath.Base(urlPath)
+	path := filepath.Join(cgiDir, script)
+	if !strings.HasPrefix(path, filepath.Clean(cgiDir)+string(os.PathSeparator)) {
+		return "", false
+	}
+	return path, true
+}
+
 func main() {
 	addr := ":9847"
 	cgiDir := "/srv/cgi-bin"
@@ -27,18 +55,14 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/cgi-bin/", func(w http.ResponseWriter, r *http.Request) {
-		script := filepath.Base(r.URL.Path)
-		path := filepath.Join(cgiDir, script)
-
-		// Guard against path traversal: filepath.Base can still yield ".."
-		// (e.g. a request path of "/cgi-bin/.."), so confirm the resolved
-		// path stays inside cgiDir before touching the filesystem.
-		if !strings.HasPrefix(path, filepath.Clean(cgiDir)+string(os.PathSeparator)) {
+		path, ok := resolveCGIScriptPath(cgiDir, r.URL.Path)
+		if !ok {
 			http.NotFound(w, r)
 			return
 		}
 
-		if _, err := os.Stat(path); err != nil { //nolint:gosec // G703: path is constrained to cgiDir by the prefix check above.
+		// path is constrained to cgiDir by resolveCGIScriptPath above.
+		if _, err := os.Stat(path); err != nil {
 			http.NotFound(w, r)
 			return
 		}
