@@ -23,7 +23,16 @@ import (
 // inside cgiDir before the caller touches the filesystem. By construction a
 // successful result is always cgiDir joined with a single path element, so its
 // parent directory is exactly cgiDir.
+//
+// cgiDir must be absolute. A relative cgiDir is rejected outright (fail closed)
+// because the prefix containment check is only sound against an absolute,
+// cleaned root; a misconfigured relative CGI_DIR would otherwise weaken the
+// guard. In production cgiDir is always absolute (the /srv/cgi-bin default or
+// an absolute CGI_DIR), so this only ever rejects a misconfiguration.
 func resolveCGIScriptPath(cgiDir, urlPath string) (string, bool) {
+	if !filepath.IsAbs(cgiDir) {
+		return "", false
+	}
 	script := filepath.Base(urlPath)
 	path := filepath.Join(cgiDir, script)
 	if !strings.HasPrefix(path, filepath.Clean(cgiDir)+string(os.PathSeparator)) {

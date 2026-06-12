@@ -87,6 +87,20 @@ func TestResolveCGIScriptPath(t *testing.T) {
 			wantPath: "/srv/cgi-bin/dump",
 			wantOK:   true,
 		},
+		{
+			name:    "relative cgiDir rejected",
+			cgiDir:  "srv/cgi-bin",
+			urlPath: "/cgi-bin/dump",
+			// A non-absolute cgiDir fails closed: the containment check is
+			// only sound against an absolute root.
+			wantOK: false,
+		},
+		{
+			name:    "dotdot cgiDir rejected",
+			cgiDir:  "..",
+			urlPath: "..",
+			wantOK:  false,
+		},
 	}
 
 	for _, tc := range tests {
@@ -104,40 +118,48 @@ func TestResolveCGIScriptPath(t *testing.T) {
 }
 
 // FuzzResolveCGIScriptPath drives the path-traversal guard with arbitrary
-// untrusted request paths and asserts the security invariant: whenever the
-// function accepts a path, that path must resolve to a location strictly
-// inside cgiDir, and its parent must be exactly cgiDir (the result is always
-// cgiDir joined with a single element). A rejection must never return a path.
+// untrusted request paths AND directory roots, and asserts the security
+// invariant: whenever the function accepts a path, (1) cgiDir was absolute,
+// (2) the path resolves to a location strictly inside cgiDir, and (3) its
+// parent is exactly cgiDir (the result is always cgiDir joined with a single
+// element). A rejection must never return a path.
 //
-// cgiDir is trusted startup config (the CGI_DIR env var or the /srv/cgi-bin
-// default) and is always an absolute path in production, so it is fixed here
-// to a realistic value; only the request path is attacker-controlled and
-// therefore fuzzed.
+// In production cgiDir is trusted startup config and always absolute, but it
+// is fuzzed here too so the guard's fail-closed behavior on a misconfigured
+// (relative or traversal) CGI_DIR is exercised rather than assumed. The
+// invariants above hold for ANY (cgiDir, urlPath) pair, which is why the
+// directory root can be fuzzed without producing false counterexamples.
 func FuzzResolveCGIScriptPath(f *testing.F) {
-	const cgiDir = "/srv/cgi-bin"
-
-	seeds := []string{
-		"/cgi-bin/dump",
-		"/cgi-bin/health",
-		"/cgi-bin/..",
-		"/cgi-bin/../../etc/passwd",
-		"/cgi-bin/%2e%2e/secret",
-		"/cgi-bin/..%2f..%2fetc",
-		"/cgi-bin/foo/bar/baz",
-		"/cgi-bin/\x00null",
-		"/cgi-bin/.../...//",
-		"//cgi-bin//dump//",
-		"/cgi-bin/",
-		"/",
-		"",
-		"..",
-		".",
+	seeds := []struct {
+		cgiDir  string
+		urlPath string
+	}{
+		{"/srv/cgi-bin", "/cgi-bin/dump"},
+		{"/srv/cgi-bin", "/cgi-bin/health"},
+		{"/srv/cgi-bin", "/cgi-bin/.."},
+		{"/srv/cgi-bin", "/cgi-bin/../../etc/passwd"},
+		{"/srv/cgi-bin", "/cgi-bin/%2e%2e/secret"},
+		{"/srv/cgi-bin", "/cgi-bin/..%2f..%2fetc"},
+		{"/srv/cgi-bin", "/cgi-bin/foo/bar/baz"},
+		{"/srv/cgi-bin", "/cgi-bin/\x00null"},
+		{"/srv/cgi-bin", "/cgi-bin/.../...//"},
+		{"/srv/cgi-bin", "//cgi-bin//dump//"},
+		{"/srv/cgi-bin", "/cgi-bin/"},
+		{"/srv/cgi-bin", "/"},
+		{"/srv/cgi-bin", ""},
+		{"/srv/cgi-bin/", "/cgi-bin/dump"},
+		{"/srv/cgi-bin/..", "/cgi-bin/dump"},
+		{"/", "/cgi-bin/dump"},
+		{"srv/cgi-bin", "/cgi-bin/dump"},
+		{"", "/cgi-bin/dump"},
+		{"..", ".."},
+		{".", "."},
 	}
 	for _, s := range seeds {
-		f.Add(s)
+		f.Add(s.cgiDir, s.urlPath)
 	}
 
-	f.Fuzz(func(t *testing.T, urlPath string) {
+	f.Fuzz(func(t *testing.T, cgiDir, urlPath string) {
 		path, ok := resolveCGIScriptPath(cgiDir, urlPath)
 
 		if !ok {
@@ -145,6 +167,10 @@ func FuzzResolveCGIScriptPath(f *testing.F) {
 				t.Errorf("resolveCGIScriptPath(%q, %q) returned path %q on rejection, want empty", cgiDir, urlPath, path)
 			}
 			return
+		}
+
+		if !filepath.IsAbs(cgiDir) {
+			t.Errorf("resolveCGIScriptPath(%q, %q) accepted a non-absolute cgiDir", cgiDir, urlPath)
 		}
 
 		if !withinDir(cgiDir, path) {
