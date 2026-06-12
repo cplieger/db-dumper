@@ -65,7 +65,7 @@ themselves with built-in cron. This image takes the opposite tack:
 - **Single env var for multiple databases.** Add a database to your
   pipeline by appending to `DB_SPECS`, no per-DB config files.
 
-This is a minimal Alpine image (`alpine:3.23` with the `docker-cli`
+This is a minimal Alpine image (with the `docker-cli`
 package added) — just enough to run `pg_dump` over a Docker socket via
 `docker exec`. It runs as root because mounting the Docker socket
 requires it.
@@ -208,12 +208,12 @@ underlying issue is fixed the next probe recovers without a restart.
 
 ## Dependencies
 
-| Dependency | Version | Source |
-|------------|---------|--------|
-| alpine | `3.23` | [Docker Hub](https://hub.docker.com/_/alpine) |
-| docker-cli | Alpine apk package | [Alpine packages](https://pkgs.alpinelinux.org/packages?name=docker-cli) |
-| tini | Alpine apk package | [Alpine packages](https://pkgs.alpinelinux.org/packages?name=tini) |
-| golang (build only) | `1.26-alpine` | [Go](https://hub.docker.com/_/golang) |
+| Dependency | Source |
+|------------|--------|
+| alpine | [Docker Hub](https://hub.docker.com/_/alpine) |
+| docker-cli | [Alpine packages](https://pkgs.alpinelinux.org/packages?name=docker-cli) |
+| tini | [Alpine packages](https://pkgs.alpinelinux.org/packages?name=tini) |
+| golang (build only) | [Go](https://hub.docker.com/_/golang) |
 
 Base images are updated automatically via [Renovate](https://github.com/renovatebot/renovate)
 and pinned by digest; `docker-cli` and `tini` track the Alpine package
