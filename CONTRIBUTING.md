@@ -83,15 +83,23 @@ order — keep this separation when extending it:
 
 ## Building and validating locally
 
-There is no Go test suite (the binary is a thin CGI shim); validation
-is build + lint:
+The Go surface is small (a thin CGI shim), but the `/cgi-bin/` path
+resolver is a security boundary — it must never let a request path
+escape `cgiDir`. That guard (`resolveCGIScriptPath`) has table tests
+and a fuzz target in `cmd/cgiserver/cgipath_test.go`.
 
 ```sh
-# Go: build the CGI server and run the linters (golangci-lint v2 also
-# enforces gofumpt + gci formatting, so a format drift fails the run).
+# Go: build the CGI server, run the tests, and run the linters
+# (golangci-lint v2 also enforces gofumpt + gci formatting, so a format
+# drift fails the run).
 go build ./cmd/cgiserver
+go test ./...
 golangci-lint run
 golangci-lint fmt   # apply formatting fixes
+
+# Exercise the path-traversal fuzz target directly (Go fuzzes one at a
+# time). The weekly central fuzz run does this for every target.
+go test -run '^$' -fuzz '^FuzzResolveCGIScriptPath$' -fuzztime 30s ./cmd/cgiserver
 
 # Shell: lint every script against the busybox sh target.
 shellcheck entrypoint.sh dump.sh health.sh lib/*.sh
@@ -104,7 +112,10 @@ docker build -t db-dumper .
 CI runs the same Go battery (vet, golangci-lint, race, govulncheck) via
 the shared `cplieger/ci` reusable workflow referenced from
 `.github/workflows/ci.yaml` — there is nothing repo-specific to
-configure.
+configure. Fuzz targets run on the weekly central `weekly-fuzz`
+schedule, not on PR/push; a counterexample opens a `fuzz-finding` issue
+and is fixed by committing the minimized seed under
+`cmd/cgiserver/testdata/fuzz/`.
 
 ## Commits and PRs
 
