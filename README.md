@@ -1,9 +1,12 @@
+# db-dumper
 
-![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)
+[![CI](https://github.com/cplieger/db-dumper/actions/workflows/ci.yaml/badge.svg)](https://github.com/cplieger/db-dumper/actions/workflows/ci.yaml)
 [![GitHub release](https://img.shields.io/github/v/release/cplieger/db-dumper)](https://github.com/cplieger/db-dumper/releases)
 [![Image Size](https://ghcr-badge.egpl.dev/cplieger/db-dumper/size)](https://github.com/cplieger/db-dumper/pkgs/container/db-dumper)
 ![Platforms](https://img.shields.io/badge/platforms-amd64%20%7C%20arm64-blue)
-![base: alpine 3.23](https://img.shields.io/badge/base-alpine_3.23-0D597F?logo=alpinelinux)
+![base: Alpine](https://img.shields.io/badge/base-Alpine-0D597F?logo=alpinelinux)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/cplieger/db-dumper/badge)](https://scorecard.dev/viewer/?uri=github.com/cplieger/db-dumper)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
 
 On-demand PostgreSQL backup sidecar — hit an HTTP endpoint, get a
 `.dump` file ready for your existing backup tool to pick up.
